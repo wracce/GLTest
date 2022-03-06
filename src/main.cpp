@@ -1,5 +1,6 @@
 #include <windows.h>
 #include <gl/gl.h>
+#include <math.h>
 
 #pragma comment(lib, "opengl32.lib")
 
@@ -79,22 +80,22 @@ int WINAPI WinMain(HINSTANCE hInstance,
 		{
 			/* OpenGL animation code goes here */
 
-			glClearColor(1.0f, 1.0f, 1.0f, 0.0f);
+			glClearColor(0.5f, 1.0f, 0.5f, 0.0f);
 			glClear(GL_COLOR_BUFFER_BIT);
-
-			glPushMatrix();
-			glRotatef(theta, 0.0f, 0.0f, 1.0f);
-
-			glBegin(GL_TRIANGLES);
-
-			glColor3f(1.0f, 0.0f, 0.0f);   glVertex2f(0.0f, 1.0f);
-			glColor3f(0.0f, 1.0f, 0.0f);   glVertex2f(0.0f, 0.0f);
-			glColor3f(0.0f, 0.0f, 1.0f);   glVertex2f(1.0f, 0.0f);
-
-			glColor3f(1.0f, 0.0f, 0.0f);   glVertex2f(0.0f, 1.0f);
-			glColor3f(0.0f, 1.0f, 0.0f);   glVertex2f(1.0f, 1.0f);
-			glColor3f(0.0f, 0.0f, 1.0f);   glVertex2f(1.0f, 0.0f);
-
+			
+			float x, y;
+			float cnt = 4;
+			float l = 0.5;
+			float a = 3.14 * 2 / cnt;
+			glBegin(GL_TRIANGLE_FAN);
+			glColor3f(0.0f,0.0f, 0.0f);
+			glVertex2f(0.0f, 0.0f);
+			for (int i = 0; i <= cnt; i++)
+			{
+				x = sin(a * i) * l;
+				y = cos(a * i) * l;
+				glVertex2f(x, y);
+			}
 			glEnd();
 
 			glPopMatrix();

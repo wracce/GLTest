@@ -1,0 +1,4 @@
+[submodule "external/glad"]
+	path = external/glad
+	url = git@github.com:Dav1dde/glad.git
+	branch = glad2

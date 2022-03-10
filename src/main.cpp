@@ -11,23 +11,7 @@ LRESULT CALLBACK WindowProc(HWND, UINT, WPARAM, LPARAM);
 void EnableOpenGL(HWND hwnd, HDC*, HGLRC*);
 void DisableOpenGL(HWND, HDC, HGLRC);
 
-POINTFLOAT vertices[] =
-{
-	{0,0},
-	{1,0},
-	{1,1},
-	{0,1}
-};
-
-float colors[] = 
-{
-	1,0,0,
-	0,1,0,
-	0,0,1,
-	1,1,0,
-};
-
-GLuint index[] = { 1,2,3, 3,0,1 };
+float vert[] = { 1,1,0, -1,0,0, 1,-1,0 };
 
 int WINAPI WinMain(HINSTANCE hInstance,
 	HINSTANCE hPrevInstance,
@@ -78,8 +62,14 @@ int WINAPI WinMain(HINSTANCE hInstance,
 
 	/* enable OpenGL for the window */
 	EnableOpenGL(hwnd, &hDC, &hRC);
-
-
+	
+	glEnable(GL_DEPTH_TEST);
+	
+	glLoadIdentity();
+	//glOrtho(2, -2, -2, 2, - 1, 1);
+	glFrustum(-1, 1, -1, 1, 2, 6);
+	 
+	glTranslatef(0, 0, -2);
 	/* program main loop */
 	while (!bQuit)
 	{
@@ -102,20 +92,22 @@ int WINAPI WinMain(HINSTANCE hInstance,
 			/* OpenGL animation code goes here */
 
 			glClearColor(0, 0, 0, 0);
-			glClear(GL_COLOR_BUFFER_BIT);
+			glClear( GL_DEPTH_BUFFER_BIT);
 			
-			glRotatef(2, 0, 0, 1);
 
-			glVertexPointer(2, GL_FLOAT, 0, &vertices);
+			glTranslatef(0, 0, -0.01);
+
+			glVertexPointer(3, GL_FLOAT, 0, &vert);
 			glEnableClientState(GL_VERTEX_ARRAY);
+				glColor3f(0, 1, 0);
+				glDrawArrays(GL_TRIANGLES, 0, 3);
 
-			glColorPointer(3, GL_FLOAT, 0, &colors);
-			glEnableClientState(GL_COLOR_ARRAY);
-				//glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
-				glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, &index);
-
+				glPushMatrix();
+					glColor3f(1, 0, 0);
+					glTranslatef(1, 0, -1);
+					glDrawArrays(GL_TRIANGLES, 0, 3);
+				glPopMatrix();
 			glDisableClientState(GL_VERTEX_ARRAY);
-			glDisableClientState(GL_COLOR_ARRAY);
 
 			SwapBuffers(hDC);
 

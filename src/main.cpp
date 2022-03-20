@@ -4,6 +4,7 @@
 #include <gl/gl.h>
 #include <math.h>
 #include <time.h>
+#include <iostream>
 #define _USE_MATH_DEFINES
 #pragma comment(lib, "opengl32.lib")
 
@@ -11,78 +12,50 @@ LRESULT CALLBACK WindowProc(HWND, UINT, WPARAM, LPARAM);
 void EnableOpenGL(HWND hwnd, HDC*, HGLRC*);
 void DisableOpenGL(HWND, HDC, HGLRC);
 
-float vert[] = { 1,1,0, 1,-1,0, -1,-1,0, -1,1,0 };
-//float vertObj[] = {-1,-1,-2, -1,1,-2 , 1,1,-2, 1,-1,-2};
-float vertObj[] =
-{
-	-1,-1,0, -1,1,0, 0,0,2,
-	-1,1,0, 0,0,2, 1,1,0,
-	0,0,2, 1,1,0, 1,-1,0,
-	1,1,0, 1,-1,0, -1,1,0,
-	1,-1,0, -1,1,0, -1,-1,0,
-	-1,1,0, -1,-1,0, 0,0,2,
+float k;
+int width, height;
+
+typedef struct {
+	char name[20];
+	float vert[8];
+	BOOL hover;
+} TButton ;
+
+TButton btn[] = {
+	"start", {0,0,100,0,100,30,0,30}, FALSE,
+	"stop", {0,40,100,40,100,70,0,70}, FALSE ,
+	"quit", {0,80,100,80,100,110,0,110}, FALSE
 };
 
-float xAlfa = 20;
-float zAlfa = 0;
-POINTFLOAT pos = { 0,0 };
+int btnCnt = sizeof(btn) / sizeof(btn[0]);
 
-void ShowWorld()
+void TButton_Show(TButton btn)
 {
 	glEnableClientState(GL_VERTEX_ARRAY);
-	glVertexPointer(3, GL_FLOAT, 0, &vert);
-	for (int i = -5; i < 5; i++)
-	{
-		for (int j = -5; j < 5; j++)
-		{
-			glPushMatrix();
-			if ((i + j) % 2 == 0) glColor3f(0,0.5,0);
-			else glColor3f(1, 1, 1);
-			glTranslatef(i * 2, j * 2, 0);
-			glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
-			glPopMatrix();
-		}
-	}
+	if (btn.hover) glColor3f(1, 0, 0);
+	else glColor3f(0, 1, 0);
+	glVertexPointer(2, GL_FLOAT, 0, btn.vert);
+	glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
 	glDisableClientState(GL_VERTEX_ARRAY);
 
 }
 
-void MoveCamera()
+BOOL PointInButton(int x, int y, TButton btn)
 {
-	if (GetKeyState(VK_UP) < 0) xAlfa = ++xAlfa>180? 180:xAlfa;
-	if (GetKeyState(VK_DOWN) < 0) xAlfa = --xAlfa < 0? 0:xAlfa;
-	if (GetKeyState(VK_LEFT) < 0) zAlfa++;
-	if (GetKeyState(VK_RIGHT) < 0) zAlfa--;
-
-	float ugol = -zAlfa / 180 * M_PI;
-	float speed = 0;
-
-	if (GetKeyState('W') < 0) speed = 0.1;
-	if (GetKeyState('S') < 0) speed = -0.1;
-	if (GetKeyState('A') < 0) { speed = 0.1; ugol -= M_PI * 0.5; }
-	if (GetKeyState('D') < 0) { speed = 0.1; ugol += M_PI * 0.5; }
-	if (speed != 0)
-	{
-		pos.x += sin(ugol) * speed;
-		pos.y += cos(ugol) * speed;
-	}
-
-	glRotatef(-xAlfa, 1, 0, 0);
-	glRotatef(-zAlfa,0,0,1);
-	glTranslatef(-pos.x, -pos.y, -3);
+	return((x > btn.vert[0]) && (x < btn.vert[4])
+		&& (y > btn.vert[1]) && (y < btn.vert[5]));
 }
 
-void ShowObj(float x, float y, float z)
+void ShowMenu()
 {
 	glPushMatrix();
-	glTranslatef(x, y, z);
-	glEnableClientState(GL_VERTEX_ARRAY);
-	glVertexPointer(3, GL_FLOAT, 0, &vertObj);
-	glDrawArrays(GL_TRIANGLES, 0, 18);
+		glLoadIdentity();
+		glOrtho(0,width,height,0,-1,1);
+		for (int i = 0; i < btnCnt; i++)
+		{
+			TButton_Show(btn[i]);
+		}
 	glPopMatrix();
-
-	glDisableClientState(GL_VERTEX_ARRAY);
-
 }
 
 int WINAPI WinMain(HINSTANCE hInstance,
@@ -134,10 +107,6 @@ int WINAPI WinMain(HINSTANCE hInstance,
 
 	/* enable OpenGL for the window */
 	EnableOpenGL(hwnd, &hDC, &hRC);
-	
-	glEnable(GL_DEPTH_TEST);
-	glLoadIdentity();
-	glFrustum(-1, 1, -1, 1, 2, 80);
 
 	/* program main loop */
 	while (!bQuit)
@@ -161,19 +130,12 @@ int WINAPI WinMain(HINSTANCE hInstance,
 			/* OpenGL animation code goes here */
 
 			glClearColor(0, 0, 0, 0);
-			glClearDepth(1.0);
-			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+			glClear(GL_COLOR_BUFFER_BIT);
 			
 			glPushMatrix();
-				MoveCamera();
-				ShowWorld();
-
-				glColor3f(1, 0.2, 0.2);
-				ShowObj(0,0,0);
-				glColor3f(1, 0.2, 1);
-				glRotatef(180, 1, 0, 0);
-				ShowObj(0, 0, -4);
 			glPopMatrix();
+
+			ShowMenu();
 
 			SwapBuffers(hDC);
 
@@ -197,8 +159,31 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	case WM_CLOSE:
 		PostQuitMessage(0);
 	break;
-
-
+	case WM_LBUTTONDOWN:
+		for (int i = 0; i < btnCnt; i++)
+		{
+			if (PointInButton(LOWORD(lParam), HIWORD(lParam), btn[i]))
+			{
+				std::cout << btn[i].name << std::endl;
+				if (strcmp(btn[i].name, "quit") == 0)
+					PostQuitMessage(0);
+			}
+		}
+		break;
+	case WM_MOUSEMOVE:
+		for (int i = 0; i < btnCnt; i++)
+		{
+			btn[i].hover = PointInButton(LOWORD(lParam), HIWORD(lParam), btn[i]);
+		}
+		break;
+	case WM_SIZE:
+		width = LOWORD(lParam);
+		height = HIWORD(lParam);
+		glViewport(0, 0, width, height);
+		glLoadIdentity();
+		k = width / (float)height;
+		glOrtho(-1*k, k, -1, 1, -1, 1);
+		break;
 	default:
 		return DefWindowProc(hwnd, uMsg, wParam, lParam);
 	}

@@ -11,7 +11,79 @@ LRESULT CALLBACK WindowProc(HWND, UINT, WPARAM, LPARAM);
 void EnableOpenGL(HWND hwnd, HDC*, HGLRC*);
 void DisableOpenGL(HWND, HDC, HGLRC);
 
-float vert[] = { 1,1,0, -1,0,0, 1,-1,0 };
+float vert[] = { 1,1,0, 1,-1,0, -1,-1,0, -1,1,0 };
+//float vertObj[] = {-1,-1,-2, -1,1,-2 , 1,1,-2, 1,-1,-2};
+float vertObj[] =
+{
+	-1,-1,0, -1,1,0, 0,0,2,
+	-1,1,0, 0,0,2, 1,1,0,
+	0,0,2, 1,1,0, 1,-1,0,
+	1,1,0, 1,-1,0, -1,1,0,
+	1,-1,0, -1,1,0, -1,-1,0,
+	-1,1,0, -1,-1,0, 0,0,2,
+};
+
+float xAlfa = 20;
+float zAlfa = 0;
+POINTFLOAT pos = { 0,0 };
+
+void ShowWorld()
+{
+	glEnableClientState(GL_VERTEX_ARRAY);
+	glVertexPointer(3, GL_FLOAT, 0, &vert);
+	for (int i = -5; i < 5; i++)
+	{
+		for (int j = -5; j < 5; j++)
+		{
+			glPushMatrix();
+			if ((i + j) % 2 == 0) glColor3f(0,0.5,0);
+			else glColor3f(1, 1, 1);
+			glTranslatef(i * 2, j * 2, 0);
+			glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+			glPopMatrix();
+		}
+	}
+	glDisableClientState(GL_VERTEX_ARRAY);
+
+}
+
+void MoveCamera()
+{
+	if (GetKeyState(VK_UP) < 0) xAlfa = ++xAlfa>180? 180:xAlfa;
+	if (GetKeyState(VK_DOWN) < 0) xAlfa = --xAlfa < 0? 0:xAlfa;
+	if (GetKeyState(VK_LEFT) < 0) zAlfa++;
+	if (GetKeyState(VK_RIGHT) < 0) zAlfa--;
+
+	float ugol = -zAlfa / 180 * M_PI;
+	float speed = 0;
+
+	if (GetKeyState('W') < 0) speed = 0.1;
+	if (GetKeyState('S') < 0) speed = -0.1;
+	if (GetKeyState('A') < 0) { speed = 0.1; ugol -= M_PI * 0.5; }
+	if (GetKeyState('D') < 0) { speed = 0.1; ugol += M_PI * 0.5; }
+	if (speed != 0)
+	{
+		pos.x += sin(ugol) * speed;
+		pos.y += cos(ugol) * speed;
+	}
+
+	glRotatef(-xAlfa, 1, 0, 0);
+	glRotatef(-zAlfa,0,0,1);
+	glTranslatef(-pos.x, -pos.y, -3);
+}
+
+void ShowObj(float x, float y, float z)
+{
+	glPushMatrix();
+	glTranslatef(x, y, z);
+	glEnableClientState(GL_VERTEX_ARRAY);
+	glVertexPointer(3, GL_FLOAT, 0, &vertObj);
+	glDrawArrays(GL_TRIANGLES, 0, 18);
+	glPopMatrix();
+
+	glDisableClientState(GL_VERTEX_ARRAY);
+
+}
 
 int WINAPI WinMain(HINSTANCE hInstance,
 	HINSTANCE hPrevInstance,
@@ -64,12 +136,9 @@ int WINAPI WinMain(HINSTANCE hInstance,
 	EnableOpenGL(hwnd, &hDC, &hRC);
 	
 	glEnable(GL_DEPTH_TEST);
-	
 	glLoadIdentity();
-	//glOrtho(2, -2, -2, 2, - 1, 1);
-	glFrustum(-1, 1, -1, 1, 2, 6);
-	 
-	glTranslatef(0, 0, -2);
+	glFrustum(-1, 1, -1, 1, 2, 80);
+
 	/* program main loop */
 	while (!bQuit)
 	{
@@ -92,22 +161,19 @@ int WINAPI WinMain(HINSTANCE hInstance,
 			/* OpenGL animation code goes here */
 
 			glClearColor(0, 0, 0, 0);
-			glClear( GL_DEPTH_BUFFER_BIT);
+			glClearDepth(1.0);
+			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 			
+			glPushMatrix();
+				MoveCamera();
+				ShowWorld();
 
-			glTranslatef(0, 0, -0.01);
-
-			glVertexPointer(3, GL_FLOAT, 0, &vert);
-			glEnableClientState(GL_VERTEX_ARRAY);
-				glColor3f(0, 1, 0);
-				glDrawArrays(GL_TRIANGLES, 0, 3);
-
-				glPushMatrix();
-					glColor3f(1, 0, 0);
-					glTranslatef(1, 0, -1);
-					glDrawArrays(GL_TRIANGLES, 0, 3);
-				glPopMatrix();
-			glDisableClientState(GL_VERTEX_ARRAY);
+				glColor3f(1, 0.2, 0.2);
+				ShowObj(0,0,0);
+				glColor3f(1, 0.2, 1);
+				glRotatef(180, 1, 0, 0);
+				ShowObj(0, 0, -4);
+			glPopMatrix();
 
 			SwapBuffers(hDC);
 

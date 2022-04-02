@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.18)
 project(TestGame2)
 set(CMAKE_CXX_STANDARD 17)
 
-add_executable(${PROJECT_NAME} WIN32 src/main.cpp "src/_OpenGL/camera.h" "src/_OpenGL/camera.cpp")
+add_executable(${PROJECT_NAME} WIN32 "external/stb_image.h" "src/main.cpp" "src/_OpenGL/camera.h" "src/_OpenGL/camera.cpp")
 #add_executable(${PROJECT_NAME} "src/main.cpp")
 
 add_subdirectory(external/glad/cmake glad_cmake)

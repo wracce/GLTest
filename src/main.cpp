@@ -1,24 +1,54 @@
 #include <windows.h>
 #include <gl/gl.h>
 
+#define STB_IMAGE_IMPLEMENTATION
+#include "../external/stb_image.h"
+
 #pragma comment(lib, "opengl32.lib")
 
 LRESULT CALLBACK WindowProc(HWND, UINT, WPARAM, LPARAM);
 void EnableOpenGL(HWND hwnd, HDC*, HGLRC*);
 void DisableOpenGL(HWND, HDC, HGLRC);
 
-float vertex[] = { -1,-1,0, 1,-1,0, 1,1,0, -1,1,0 };
-float normal[] = { -1,-1,3, 1,-1,3, 1,1,3, -1,1,3 };
+unsigned int texture;
 
-void Fraw() {
+void Game_Init()
+{
+	int width, height, cnt;
+	unsigned char *data = stbi_load("01.png", &width, &height, &cnt, 0);
 
-	glEnableClientState(GL_VERTEX_ARRAY);
-	glEnableClientState(GL_NORMAL_ARRAY);
-	glVertexPointer(3, GL_FLOAT, 0, vertex);
-	glNormalPointer(GL_FLOAT, 0, normal);
-	glDrawArrays(GL_TRIANGLE_FAN,0,4);
-	glDisableClientState(GL_VERTEX_ARRAY);
-	glDisableClientState(GL_NORMAL_ARRAY);
+	glGenTextures(1, &texture);
+	glBindTexture(GL_TEXTURE_2D, texture);
+	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 
+		0, cnt=4? GL_RGBA: GL_RGB, GL_UNSIGNED_BYTE, data);
+	glBindTexture(GL_TEXTURE_2D, 0);
+
+	stbi_image_free(data);
+}
+
+float vertex[] = {-1,-1,0, 1,-1,0, 1,1,0, -1,1,0};
+float texCoord[] = { 0,1, 1,1, 1,0, 0,0 };
+
+
+void Game_Show()
+{
+	glEnable(GL_TEXTURE_2D);
+	glBindTexture(GL_TEXTURE_2D, texture);
+	glColor3f(1, 1, 1);
+	glPushMatrix();
+		glEnableClientState(GL_VERTEX_ARRAY);
+		glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+		glVertexPointer(3, GL_FLOAT, 0, vertex);
+		glTexCoordPointer(2, GL_FLOAT, 0, texCoord);
+		glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+		glDisableClientState(GL_VERTEX_ARRAY);
+		glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+	glPopMatrix();
+
 }
 
 int WINAPI WinMain(HINSTANCE hInstance,
@@ -71,17 +101,7 @@ int WINAPI WinMain(HINSTANCE hInstance,
 	/* enable OpenGL for the window */
 	EnableOpenGL(hwnd, &hDC, &hRC);
 
-	glMatrixMode(GL_PROJECTION);
-	glLoadIdentity();
-	glFrustum(-0.1, 0.1, -0.1, 0.1, 0.2, 1000);
-	glMatrixMode(GL_MODELVIEW);
-	glLoadIdentity();
-
-	glEnable(GL_DEPTH_TEST);
-	glEnable(GL_LIGHTING);
-	glEnable(GL_LIGHT0);
-	glEnable(GL_COLOR_MATERIAL);
-	glEnable(GL_NORMALIZE);
+	Game_Init();
 	/* program main loop */
 	while (!bQuit)
 	{
@@ -104,26 +124,10 @@ int WINAPI WinMain(HINSTANCE hInstance,
 			/* OpenGL animation code goes here */
 
 			glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+			glClear(GL_COLOR_BUFFER_BIT);
 
 			glPushMatrix();
-			glRotatef(-60, 1, 0, 0);
-			glRotatef(33, 0, 0, 1);
-			glTranslatef(2,3,-2);
-
-			glPushMatrix();
-				glRotatef(theta, 0, 1, 0);
-				float position[] = { 0,0,1,0 };
-				glLightfv(GL_LIGHT0,GL_POSITION, position);
-
-				glTranslatef(0, 0, 1);
-				glScalef(0.2, 0.2, 0.2);
-				glColor3f(1, 1, 1);
-				Fraw();
-			glPopMatrix();
-			glColor3f(0.0f, 1.0f, 0.0f);
-			Fraw();
-
+			Game_Show();
 			glPopMatrix();
 
 			SwapBuffers(hDC);
